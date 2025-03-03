@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeSmuME Emulator</title>
+</head>
+<body>
+    <h1>DeSmuME Emulator</h1>
+    <div>
+        <canvas id="canvas" width="256" height="192"></canvas>
+    </div>
+    <script>
+        // Load the DeSmuME WebAssembly module
+        var Module = {
+            preRun: [],
+            postRun: [],
+            print: (function() {
+                return function(text) {
+                    console.log(text);
+                };
+            })(),
+            printErr: function(text) {
+                console.error(text);
+            },
+            canvas: (function() {
+                var canvas = document.getElementById('canvas');
+                return canvas;
+            })(),
+            setStatus: function(text) {
+                if (Module.setStatus.last) {
+                    if (Module.setStatus.last.text === text) {
+                        return;
+                    }
+                    var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+                    if (m && Module.setStatus.last.text === m[1]) {
+                        return;
+                    }
+                }
+                Module.setStatus.last = {
+                    text: text
+                };
+                console.log(text);
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+            }
+        };
+        Module.setStatus('Downloading...');
+        window.onerror = function(event) {
+            Module.setStatus('Exception thrown, see JavaScript console');
+            Module.setStatus = function(text) {
+                if (text) Module.printErr('[post-exception status] ' + text);
+            };
+        };
+    </script>
+    <script src="desmume.js"></script>
+</body>
+</html>
